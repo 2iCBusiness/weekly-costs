@@ -1,0 +1,383 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px;color:var(--color-text-primary)}
+.app{padding:0 0 2rem}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--color-border-tertiary);margin-bottom:1.5rem}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--color-text-secondary);background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:var(--color-text-primary);border-bottom-color:#19304F}
+.page{display:none}.page.active{display:block}
+.week-block{margin-bottom:2rem}
+.week-hdr{display:flex;align-items:center;gap:12px;background:#19304F;color:#fff;padding:8px 12px;border-radius:var(--border-radius-md) var(--border-radius-md) 0 0}
+.week-hdr input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);color:#fff;font-size:13px;font-weight:500;width:180px;outline:none;padding:2px 4px}
+.week-hdr input::placeholder{color:rgba(255,255,255,0.5)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;font-weight:500;padding:6px 8px;text-align:right;white-space:nowrap;border:0.5px solid var(--color-border-tertiary)}
+.tbl th.lbl{text-align:left}
+.tbl td{padding:5px 8px;border:0.5px solid var(--color-border-tertiary);text-align:right}
+.tbl td.src{text-align:left;font-weight:500;color:#19304F;font-size:12px;width:180px;white-space:nowrap}
+.tbl td input[type=number]{width:90px;text-align:right;border:none;background:transparent;font-size:12px;color:#0000FF;outline:none;padding:0}
+.tbl td input[type=number]:focus{background:var(--color-background-info);border-radius:3px}
+.tbl td.calc{color:var(--color-text-primary);font-size:12px;background:var(--color-background-secondary)}
+.tbl td.profit.pos{color:#0a7a4a;font-weight:500}
+.tbl td.profit.neg{color:#c0392b;font-weight:500}
+.tbl tr.totrow td{background:#04998d;color:#fff;font-weight:500;font-size:12px}
+.tbl tr.totrow td.src{color:#fff}
+.sec-hdr{background:#2E4B7C;color:#fff}
+.sec-hdr-t{background:#04998d;color:#fff}
+.spacer-col{width:12px;background:transparent!important;border:none!important}
+.hint{font-size:11px;color:var(--color-text-secondary);margin-bottom:0.75rem}
+.hint span{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.5rem}
+.scard{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.scard-lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.scard-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.scard-val.neg{color:#c0392b}
+.stbl{width:100%;border-collapse:collapse;margin-bottom:1.5rem}
+.stbl th{font-size:11px;font-weight:500;padding:8px 10px;text-align:right;background:#2E4B7C;color:#fff;border:0.5px solid rgba(255,255,255,0.2)}
+.stbl th.lbl{text-align:left}
+.stbl td{padding:7px 10px;border:0.5px solid var(--color-border-tertiary);font-size:12px;text-align:right}
+.stbl td.lbl{text-align:left;font-weight:500;color:#19304F}
+.stbl tr.tot td{background:#04998d;color:#fff;font-weight:500}
+.stbl tr:nth-child(even) td{background:var(--color-background-secondary)}
+.stbl tr.tot td{background:#04998d!important}
+.cum-tbl{width:100%;border-collapse:collapse}
+.cum-tbl th{font-size:11px;font-weight:500;padding:8px 10px;background:#2E4B7C;color:#fff;border:0.5px solid rgba(255,255,255,0.2);text-align:left}
+.cum-tbl th:last-child{text-align:right}
+.cum-tbl td{padding:7px 10px;border:0.5px solid var(--color-border-tertiary);font-size:12px}
+.cum-tbl td:last-child{text-align:right;font-weight:500;color:#19304F}
+.cum-tbl tr:nth-child(even) td{background:var(--color-background-secondary)}
+.sec-label{font-size:13px;font-weight:500;color:#19304F;margin:1.5rem 0 0.5rem;padding-bottom:4px;border-bottom:2px solid #2EBAAD}
+.help-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.help-key{font-weight:500;min-width:160px;font-size:12px;color:#19304F}
+.help-val{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+</style>
+
+<h2 class="sr-only">2iC weekly cost and profit calculator — enter weekly lead costs and revenues to track profitability across all brands</h2>
+
+<div class="app">
+<div class="tabs">
+  <button class="tab active" onclick="showPage('input',this)">Weekly input</button>
+  <button class="tab" onclick="showPage('summary',this)">Monthly summary</button>
+  <button class="tab" onclick="showPage('help',this)">How to use</button>
+</div>
+
+<div id="page-input" class="page active">
+  <div class="hint">
+    <span style="background:#0000FF"></span>Blue cells = your input &nbsp;|&nbsp;
+    <span style="background:#04998d"></span>Teal cells = auto-calculated &nbsp;|&nbsp;
+    Negative profits show in red
+  </div>
+  <div id="weeks-container"></div>
+</div>
+
+<div id="page-summary" class="page">
+  <div class="summary-grid" id="summary-cards"></div>
+  <div class="sec-label">Lead cost &amp; profit by week</div>
+  <table class="stbl" id="summary-table">
+    <thead><tr>
+      <th class="lbl">Week</th>
+      <th>Ad spend ($)</th>
+      <th>Leads (#)</th>
+      <th>Total cost ($)</th>
+      <th>Avg CPL ($)</th>
+      <th>Gross revenue ($)</th>
+      <th>Net profit ($)</th>
+      <th>Margin (%)</th>
+      <th>Brand fees ($)</th>
+    </tr></thead>
+    <tbody id="summary-body"></tbody>
+  </table>
+  <div class="sec-label">Cumulative brand totals (end of month)</div>
+  <table class="cum-tbl" id="cum-table">
+    <thead><tr><th>Brand</th><th>Cumulative total ($)</th></tr></thead>
+    <tbody id="cum-body"></tbody>
+  </table>
+</div>
+
+<div id="page-help" class="page">
+  <div class="sec-label">Weekly input sheet</div>
+  <div class="help-row"><div class="help-key">Week ending date</div><div class="help-val">Click the week header and type the date (e.g. W/E 6-Feb).</div></div>
+  <div class="help-row"><div class="help-key">Ad spend ($)</div><div class="help-val">Total ad/lead spend for each source that week. Blue cells only.</div></div>
+  <div class="help-row"><div class="help-key">Leads (#)</div><div class="help-val">Number of leads received from each source.</div></div>
+  <div class="help-row"><div class="help-key">Gen. cost ($)</div><div class="help-val">Any additional generation or platform fees. Leave 0 if none.</div></div>
+  <div class="help-row"><div class="help-key">Gross revenue ($)</div><div class="help-val">Revenue received from the listed recipient for that lead source.</div></div>
+  <div class="help-row"><div class="help-key">Brand fees</div><div class="help-val">Prospa, referral and Bizcap fees per brand. Brand total auto-calculates.</div></div>
+  <div class="sec-label">Auto-calculated cells (do not edit)</div>
+  <div class="help-row"><div class="help-key">Total cost ($)</div><div class="help-val">Ad spend + gen. cost.</div></div>
+  <div class="help-row"><div class="help-key">CPL ($)</div><div class="help-val">Total cost ÷ leads. Shows — if no leads entered.</div></div>
+  <div class="help-row"><div class="help-key">Net profit ($)</div><div class="help-val">Gross revenue − total cost. Displays red if negative.</div></div>
+  <div class="help-row"><div class="help-key">Brand total ($)</div><div class="help-val">Prospa + referral + Bizcap.</div></div>
+  <div class="help-row"><div class="help-key">Cumulative total ($)</div><div class="help-val">Running total of brand totals across all 4 weeks.</div></div>
+  <div class="sec-label">Monthly summary sheet</div>
+  <div class="help-row"><div class="help-key">Weekly rows</div><div class="help-val">All data pulls automatically from your weekly inputs. No manual entry needed.</div></div>
+  <div class="help-row"><div class="help-key">Monthly total row</div><div class="help-val">Sum of all 4 weeks.</div></div>
+  <div class="help-row"><div class="help-key">Cumulative brand totals</div><div class="help-val">Each brand's running total as of week 4.</div></div>
+</div>
+</div>
+
+<script>
+const LEAD_SOURCES = [
+  "UK Business Funds","Kiwi Business Funds","Aussie Business Funds - AF",
+  "Australian Funding","Smart Buy Finance (Residential)",
+  "Capital Tree (Commercial)","Capital Tree (Residential)",
+  "Capital Tree (Google)","Capital Tree (Facebook)","Scribble Finance (Commercial)"
+];
+const RECIPIENTS = ["HFG","NXT Wave CAV","Nero - Aus","Nero - CAV","Apace","Ambition","EZI PL","EZI - CAV","BlueFunding",""];
+const BRANDS = ["HFG","NXT Wave CAV","Nero - Aus","Nero - CAV","Apace","Ambition","EZI PL","EZI - CAV","BlueFunding",""];
+const CUM_BRANDS = ["Leads (Net)","Nero","Hamilton Finance","BlueFunding","Ambition","EZIPL","Apace","ScribbleNZ","ScribbleAUS","NXT Wave"];
+
+const WEEKS = 4;
+let state = {
+  weekLabels: ["W/E Week 1","W/E Week 2","W/E Week 3","W/E Week 4"],
+  data: Array.from({length:WEEKS}, ()=> LEAD_SOURCES.map(()=>({
+    adSpend:0, leads:0, genCost:0, grossRev:0,
+    prospa:0, referral:0, bizcap:0
+  })))
+};
+
+function fmt(n){return isNaN(n)||!isFinite(n)?'—':'$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtn(n){return isNaN(n)||!isFinite(n)?'—':Math.round(n).toLocaleString()}
+function fmtpct(n){return isNaN(n)||!isFinite(n)?'—':(n*100).toFixed(1)+'%'}
+
+function calcRow(r){
+  const tc = (r.adSpend||0)+(r.genCost||0);
+  const cpl = (r.leads||0)>0 ? tc/(r.leads||0) : null;
+  const np = (r.grossRev||0)-tc;
+  const bt = (r.prospa||0)+(r.referral||0)+(r.bizcap||0);
+  return {tc,cpl,np,bt};
+}
+
+function getWeekTotals(wi){
+  const d = state.data[wi];
+  let adSpend=0,leads=0,genCost=0,tc=0,grossRev=0,np=0,bt=0;
+  d.forEach(r=>{
+    const c=calcRow(r);
+    adSpend+=r.adSpend||0; leads+=r.leads||0; genCost+=r.genCost||0;
+    tc+=c.tc; grossRev+=r.grossRev||0; np+=c.np; bt+=c.bt;
+  });
+  const cpl=leads>0?tc/leads:null;
+  const margin=grossRev>0?np/grossRev:null;
+  return {adSpend,leads,genCost,tc,cpl,grossRev,np,margin,bt};
+}
+
+function getCumBrandTotals(){
+  const cum = CUM_BRANDS.map(()=>0);
+  for(let wi=0;wi<WEEKS;wi++){
+    state.data[wi].forEach((r,i)=>{
+      const c=calcRow(r);
+      cum[i]+=c.bt;
+    });
+    const wt=getWeekTotals(wi);
+    cum[0]+=wt.np-wt.bt;
+  }
+  return cum;
+}
+
+function buildWeeks(){
+  const con=document.getElementById('weeks-container');
+  con.innerHTML='';
+  for(let wi=0;wi<WEEKS;wi++){
+    const block=document.createElement('div');
+    block.className='week-block';
+    block.innerHTML=`
+    <div class="week-hdr">
+      <input type="text" value="${state.weekLabels[wi]}" placeholder="W/E date" data-wi="${wi}" onchange="state.weekLabels[this.dataset.wi]=this.value;refreshSummary()">
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="lbl sec-hdr" colspan="1" style="color:#fff;background:#2E4B7C">Lead source</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Ad spend ($)</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Leads (#)</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Gen. cost ($)</th>
+          <th class="sec-hdr-t" style="color:#fff;background:#04998d">Total cost ($)</th>
+          <th class="sec-hdr-t" style="color:#fff;background:#04998d">CPL ($)</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Recipient</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Gross rev ($)</th>
+          <th class="sec-hdr-t" style="color:#fff;background:#04998d">Net profit ($)</th>
+          <td class="spacer-col"></td>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Brand</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Prospa ($)</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Referral ($)</th>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Bizcap ($)</th>
+          <th class="sec-hdr-t" style="color:#fff;background:#04998d">Brand total ($)</th>
+          <td class="spacer-col"></td>
+          <th class="sec-hdr" style="color:#fff;background:#2E4B7C">Brand</th>
+          <th class="sec-hdr-t" style="color:#fff;background:#04998d">Cumulative ($)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-${wi}"></tbody>
+      <tfoot id="tfoot-${wi}"></tfoot>
+    </table>`;
+    con.appendChild(block);
+    renderWeekRows(wi);
+  }
+}
+
+function inp(wi,ri,field,val){
+  const el=document.getElementById(`i-${wi}-${ri}-${field}`);
+  if(el)el.value=val||0;
+}
+
+function renderWeekRows(wi){
+  const tbody=document.getElementById(`tbody-${wi}`);
+  const tfoot=document.getElementById(`tfoot-${wi}`);
+  tbody.innerHTML=''; tfoot.innerHTML='';
+
+  LEAD_SOURCES.forEach((src,ri)=>{
+    const r=state.data[wi][ri];
+    const c=calcRow(r);
+    const profCls=c.np<0?'profit neg':'profit pos';
+    const cplTxt=c.cpl!=null?('$'+c.cpl.toFixed(2)):'—';
+    const npTxt=c.np<0?('-$'+Math.abs(c.np).toFixed(2)):fmt(c.np);
+
+    const cum=getCumForBrand(wi,ri);
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="src">${src}</td>
+      <td><input type="number" id="i-${wi}-${ri}-adSpend" value="${r.adSpend||0}" min="0" step="0.01" oninput="update(${wi},${ri},'adSpend',this.value)"></td>
+      <td><input type="number" id="i-${wi}-${ri}-leads" value="${r.leads||0}" min="0" step="1" oninput="update(${wi},${ri},'leads',this.value)"></td>
+      <td><input type="number" id="i-${wi}-${ri}-genCost" value="${r.genCost||0}" min="0" step="0.01" oninput="update(${wi},${ri},'genCost',this.value)"></td>
+      <td class="calc">${fmt(c.tc)}</td>
+      <td class="calc">${cplTxt}</td>
+      <td style="text-align:left;font-size:12px;color:#555">${RECIPIENTS[ri]||''}</td>
+      <td><input type="number" id="i-${wi}-${ri}-grossRev" value="${r.grossRev||0}" min="0" step="0.01" oninput="update(${wi},${ri},'grossRev',this.value)"></td>
+      <td class="calc ${profCls}">${npTxt}</td>
+      <td class="spacer-col"></td>
+      <td style="text-align:left;font-size:12px;color:#555">${BRANDS[ri]||''}</td>
+      <td><input type="number" id="i-${wi}-${ri}-prospa" value="${r.prospa||0}" min="0" step="0.01" oninput="update(${wi},${ri},'prospa',this.value)"></td>
+      <td><input type="number" id="i-${wi}-${ri}-referral" value="${r.referral||0}" min="0" step="0.01" oninput="update(${wi},${ri},'referral',this.value)"></td>
+      <td><input type="number" id="i-${wi}-${ri}-bizcap" value="${r.bizcap||0}" min="0" step="0.01" oninput="update(${wi},${ri},'bizcap',this.value)"></td>
+      <td class="calc">${fmt(c.bt)}</td>
+      <td class="spacer-col"></td>
+      <td style="text-align:left;font-size:12px;color:#555">${CUM_BRANDS[ri]||''}</td>
+      <td class="calc" style="font-weight:500;color:#19304F">${fmt(cum)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const wt=getWeekTotals(wi);
+  const totalCum=getCumTotalForWeek(wi);
+  tfoot.innerHTML=`<tr class="totrow">
+    <td class="src">Weekly totals</td>
+    <td>${fmt(wt.adSpend)}</td>
+    <td>${fmtn(wt.leads)}</td>
+    <td>${fmt(wt.genCost)}</td>
+    <td>${fmt(wt.tc)}</td>
+    <td>${wt.cpl!=null?('$'+wt.cpl.toFixed(2)):'—'}</td>
+    <td></td>
+    <td>${fmt(wt.grossRev)}</td>
+    <td>${fmt(wt.np)}</td>
+    <td class="spacer-col" style="background:transparent!important;border:none!important"></td>
+    <td></td>
+    <td></td><td></td><td></td>
+    <td>${fmt(wt.bt)}</td>
+    <td class="spacer-col" style="background:transparent!important;border:none!important"></td>
+    <td></td>
+    <td>${fmt(totalCum)}</td>
+  </tr>`;
+}
+
+function getCumForBrand(wi,ri){
+  let cum=0;
+  for(let w=0;w<=wi;w++){
+    const c=calcRow(state.data[w][ri]);
+    cum+=c.bt;
+  }
+  return cum;
+}
+
+function getCumTotalForWeek(wi){
+  let cum=0;
+  for(let w=0;w<=wi;w++){
+    const wt=getWeekTotals(w);
+    cum+=wt.bt;
+  }
+  return cum;
+}
+
+function update(wi,ri,field,val){
+  state.data[wi][ri][field]=parseFloat(val)||0;
+  renderWeekRows(wi);
+  for(let w=wi+1;w<WEEKS;w++) renderWeekRows(w);
+  refreshSummary();
+}
+
+function refreshSummary(){
+  const sb=document.getElementById('summary-body');
+  const cb=document.getElementById('cum-body');
+  if(!sb) return;
+  sb.innerHTML=''; cb.innerHTML='';
+
+  let totAdSpend=0,totLeads=0,totGenCost=0,totTc=0,totGrossRev=0,totNp=0,totBt=0;
+
+  for(let wi=0;wi<WEEKS;wi++){
+    const wt=getWeekTotals(wi);
+    totAdSpend+=wt.adSpend; totLeads+=wt.leads; totGenCost+=wt.genCost;
+    totTc+=wt.tc; totGrossRev+=wt.grossRev; totNp+=wt.np; totBt+=wt.bt;
+    const tr=document.createElement('tr');
+    const npCls=wt.np<0?'style="color:#c0392b;font-weight:500"':'style="color:#0a7a4a;font-weight:500"';
+    const npTxt=wt.np<0?('-$'+Math.abs(wt.np).toFixed(2)):fmt(wt.np);
+    tr.innerHTML=`
+      <td class="lbl">${state.weekLabels[wi]}</td>
+      <td>${fmt(wt.adSpend)}</td>
+      <td>${fmtn(wt.leads)}</td>
+      <td>${fmt(wt.tc)}</td>
+      <td>${wt.cpl!=null?('$'+wt.cpl.toFixed(2)):'—'}</td>
+      <td>${fmt(wt.grossRev)}</td>
+      <td ${npCls}>${npTxt}</td>
+      <td>${wt.margin!=null?fmtpct(wt.margin):'—'}</td>
+      <td>${fmt(wt.bt)}</td>`;
+    sb.appendChild(tr);
+  }
+
+  const totCpl=totLeads>0?totTc/totLeads:null;
+  const totMargin=totGrossRev>0?totNp/totGrossRev:null;
+  const totNpTxt=totNp<0?('-$'+Math.abs(totNp).toFixed(2)):fmt(totNp);
+  const totNpSty=totNp<0?'color:#fff':  'color:#fff';
+  const totTr=document.createElement('tr');
+  totTr.className='tot';
+  totTr.innerHTML=`
+    <td class="lbl">Monthly total</td>
+    <td>${fmt(totAdSpend)}</td>
+    <td>${fmtn(totLeads)}</td>
+    <td>${fmt(totTc)}</td>
+    <td>${totCpl!=null?('$'+totCpl.toFixed(2)):'—'}</td>
+    <td>${fmt(totGrossRev)}</td>
+    <td>${totNpTxt}</td>
+    <td>${totMargin!=null?fmtpct(totMargin):'—'}</td>
+    <td>${fmt(totBt)}</td>`;
+  sb.appendChild(totTr);
+
+  const cards=document.getElementById('summary-cards');
+  const npCol=totNp<0?'neg':'';
+  cards.innerHTML=`
+    <div class="scard"><div class="scard-lbl">Monthly ad spend</div><div class="scard-val">${fmt(totAdSpend)}</div></div>
+    <div class="scard"><div class="scard-lbl">Total leads</div><div class="scard-val">${fmtn(totLeads)}</div></div>
+    <div class="scard"><div class="scard-lbl">Gross revenue</div><div class="scard-val">${fmt(totGrossRev)}</div></div>
+    <div class="scard"><div class="scard-lbl">Net profit</div><div class="scard-val ${npCol}">${totNp<0?('-$'+Math.abs(totNp).toFixed(2)):fmt(totNp)}</div></div>`;
+
+  CUM_BRANDS.forEach((brand,i)=>{
+    let cum=0;
+    for(let wi=0;wi<WEEKS;wi++){
+      const c=calcRow(state.data[wi][i]);
+      cum+=c.bt;
+    }
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${brand}</td><td>${fmt(cum)}</td>`;
+    cb.appendChild(tr);
+  });
+}
+
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='summary') refreshSummary();
+}
+
+buildWeeks();
+refreshSummary();
+</script>
